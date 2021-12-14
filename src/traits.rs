@@ -8,7 +8,7 @@ pub trait Readable<V> {
 }
 
 impl<V> Readable<V> for Atom<V> {
-    fn read(&self, root: AtomRoot) -> Option<V> {
+    fn read(&self, _root: AtomRoot) -> Option<V> {
         todo!()
     }
     fn init(&self) -> V {
@@ -20,7 +20,7 @@ impl<V> Readable<V> for Atom<V> {
 }
 
 impl<K, V> Readable<ImMap<K, V>> for AtomFamily<K, V> {
-    fn read(&self, root: AtomRoot) -> Option<ImMap<K, V>> {
+    fn read(&self, _root: AtomRoot) -> Option<ImMap<K, V>> {
         todo!()
     }
 
@@ -37,13 +37,13 @@ pub trait Writable<V>: Readable<V> {
 }
 
 impl<V> Writable<V> for Atom<V> {
-    fn write(&self, root: AtomRoot, value: V) {
+    fn write(&self, _root: AtomRoot, _value: V) {
         todo!()
     }
 }
 
 impl<K, V> Writable<ImMap<K, V>> for AtomFamily<K, V> {
-    fn write(&self, root: AtomRoot, value: ImMap<K, V>) {
+    fn write(&self, _root: AtomRoot, _value: ImMap<K, V>) {
         todo!()
     }
 }

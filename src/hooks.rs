@@ -1,11 +1,11 @@
 use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
-use dioxus::core::{Context, ScopeId};
+use dioxus::core::{ScopeId, ScopeState};
 
 use crate::{AtomId, AtomRoot, Readable, Writable};
 
 // Initializes the atom root and retuns it;
-pub fn use_init_atom_root(cx: Context) -> &Rc<RefCell<AtomRoot>> {
+pub fn use_init_atom_root(cx: &ScopeState) -> &Rc<RefCell<AtomRoot>> {
     cx.use_hook(
         |_| {
             if let Some(ctx) = cx.consume_state::<RefCell<AtomRoot>>() {
@@ -21,18 +21,36 @@ pub fn use_init_atom_root(cx: Context) -> &Rc<RefCell<AtomRoot>> {
     )
 }
 
-pub fn use_atom_root(cx: Context) -> &Rc<RefCell<AtomRoot>> {
+pub fn use_atom_root(cx: &ScopeState) -> &Rc<RefCell<AtomRoot>> {
     cx.use_hook(
         |_| cx.consume_state::<RefCell<AtomRoot>>().unwrap(),
         |val| val,
     )
 }
 
-struct UseAtomRoot<'a> {
-    cx: Context<'a>,
+pub fn use_read<'a, V: 'static>(cx: &'a ScopeState, f: impl Readable<V>) -> &'a V {
+    let id = f.unique_id();
+    cx.use_hook(
+        |_| {
+            let root = cx.consume_state::<RefCell<AtomRoot>>().unwrap();
+            let scope_id = cx.scope_id();
+            UseReadInner {
+                value: None,
+                root,
+                id,
+                scope_id,
+            }
+        },
+        |inner| {
+            let value = inner.root.borrow_mut().register(f, cx.scope_id());
+            inner.value = Some(value);
+            inner.value.as_ref().unwrap()
+        },
+    )
 }
 
-pub fn use_read<'a, V: 'static>(cx: Context<'a>, f: impl Readable<V>) -> &'a V {
+/// Returns the RC of the value directly
+pub fn use_read_rc<'a, V: 'static>(cx: &'a ScopeState, f: impl Readable<V>) -> &'a Rc<V> {
     let id = f.unique_id();
     cx.use_hook(
         |_| {
@@ -66,7 +84,7 @@ impl<V> Drop for UseReadInner<V> {
     }
 }
 
-pub fn use_read_write<'a, V>(cx: Context<'a>, f: impl Writable<V>) -> UseReadWrite<'a, V> {
+pub fn use_read_write<'a, V>(cx: &'a ScopeState, _f: impl Writable<V>) -> UseReadWrite<'a, V> {
     UseReadWrite {
         cx: cx,
         _p: PhantomData,
@@ -74,7 +92,7 @@ pub fn use_read_write<'a, V>(cx: Context<'a>, f: impl Writable<V>) -> UseReadWri
 }
 
 pub struct UseReadWrite<'a, V> {
-    cx: Context<'a>,
+    cx: &'a ScopeState,
     _p: PhantomData<V>,
 }
 impl<V> Copy for UseReadWrite<'_, V> {}
@@ -87,7 +105,7 @@ impl<'a, V> Clone for UseReadWrite<'a, V> {
     }
 }
 
-pub fn use_set<'a, T: 'static>(cx: Context<'a>, f: impl Writable<T>) -> &'a Rc<dyn Fn(T)> {
+pub fn use_set<'a, T: 'static>(cx: &'a ScopeState, f: impl Writable<T>) -> &'a Rc<dyn Fn(T)> {
     let root = use_atom_root(cx);
     cx.use_hook(
         |_| {
@@ -95,7 +113,10 @@ pub fn use_set<'a, T: 'static>(cx: Context<'a>, f: impl Writable<T>) -> &'a Rc<d
             let root = root.clone();
             let root2 = root.clone();
             let setter = Rc::new(move |new| root2.borrow_mut().set(id, new));
-            UseSetInner { root, setter }
+            UseSetInner {
+                _root: root,
+                setter,
+            }
         },
         |f| {
             //
@@ -104,6 +125,6 @@ pub fn use_set<'a, T: 'static>(cx: Context<'a>, f: impl Writable<T>) -> &'a Rc<d
     )
 }
 struct UseSetInner<T> {
-    root: Rc<RefCell<AtomRoot>>,
+    _root: Rc<RefCell<AtomRoot>>,
     setter: Rc<dyn Fn(T)>,
 }

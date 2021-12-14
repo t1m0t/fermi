@@ -57,7 +57,7 @@ impl AtomRoot {
         }
     }
 
-    pub fn read<V>(&self, f: impl Readable<V>) -> &V {
+    pub fn read<V>(&self, _f: impl Readable<V>) -> &V {
         todo!()
     }
 }

@@ -7,8 +7,8 @@ pub struct AtomBuilder;
 pub struct AtomFamilyBuilder;
 
 mod tests {
-    use super::*;
+    // use super::*;
 
-    const Name: Atom<&'static str> = |_| "name";
-    const Users: AtomFamily<&'static str, String> = |_| Default::default();
+    // const Name: Atom<&'static str> = |_| "name";
+    // const Users: AtomFamily<&'static str, String> = |_| Default::default();
 }

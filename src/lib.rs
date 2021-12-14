@@ -14,6 +14,7 @@ pub mod prelude {
     pub use crate::*;
 }
 
+#[cfg(test)]
 mod integration_test {
     use super::*;
     use dioxus::prelude::*;
@@ -21,8 +22,8 @@ mod integration_test {
     static Title: Atom<String> = |_| "".to_string();
     static Users: AtomFamily<u32, String> = |_| Default::default();
 
-    fn App(cx: Context, _props: &()) -> Element {
-        let _ = use_init_atom_root(cx);
+    fn App(cx: Scope<()>) -> Element {
+        let _ = use_init_atom_root(&cx);
 
         cx.render(rsx!(
             Leaf { id: 0 }
@@ -36,11 +37,11 @@ mod integration_test {
         id: u32,
     }
 
-    fn Leaf(cx: Context, props: &LeafProps) -> Element {
-        let user = use_read(cx, Title);
-        let user = use_read(cx, Users);
+    fn Leaf(cx: Scope<LeafProps>) -> Element {
+        let user = use_read(&cx, Title);
+        let user = use_read(&cx, Users);
 
-        use_coroutine(cx, || {
+        use_coroutine(&cx, || {
             //
             async move {
                 //
