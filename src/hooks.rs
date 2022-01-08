@@ -23,6 +23,8 @@ pub fn use_atom_root(cx: &ScopeState) -> &Rc<RefCell<AtomRoot>> {
 }
 
 pub fn use_read<'a, V: 'static>(cx: &'a ScopeState, f: impl Readable<V>) -> &'a V {
+    log::trace!("use_read atom {:?}", f.unique_id());
+
     let id = f.unique_id();
     let inner = cx.use_hook(|_| {
         let root = cx.consume_context::<RefCell<AtomRoot>>().unwrap();
@@ -99,7 +101,10 @@ pub fn use_set<'a, T: 'static>(cx: &'a ScopeState, f: impl Writable<T>) -> &'a R
         let id = f.unique_id();
         let root = root.clone();
         let root2 = root.clone();
-        let setter = Rc::new(move |new| root2.borrow_mut().set(id, new));
+        let setter = Rc::new(move |new| {
+            log::trace!("setting new value");
+            root2.borrow_mut().set(id, new)
+        });
         UseSetInner {
             _root: root,
             setter,

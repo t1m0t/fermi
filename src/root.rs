@@ -26,16 +26,21 @@ impl AtomRoot {
     }
 
     pub fn register<V: 'static>(&mut self, f: impl Readable<V>, scope: ScopeId) -> Rc<V> {
+        log::trace!("registering atom {:?}", f.unique_id());
+
         if let Some(slot) = self.atoms.get_mut(&f.unique_id()) {
             slot.subscribers.insert(scope);
             slot.value.clone().downcast().unwrap()
         } else {
             let value = Rc::new(f.init());
+            let mut subscribers = HashSet::new();
+            subscribers.insert(scope);
+
             self.atoms.insert(
                 f.unique_id(),
                 Slot {
                     value: value.clone(),
-                    subscribers: HashSet::new(),
+                    subscribers,
                 },
             );
             value
@@ -45,9 +50,14 @@ impl AtomRoot {
     pub fn set<V: 'static>(&mut self, ptr: AtomId, value: V) {
         if let Some(slot) = self.atoms.get_mut(&ptr) {
             slot.value = Rc::new(value);
+            log::trace!("found item with subscribers {:?}", slot.subscribers);
+
             for sub in &slot.subscribers {
+                log::trace!("updating subcsriber");
                 (self.update_any)(*sub);
             }
+        } else {
+            log::trace!("no atoms found for {:?}", ptr);
         }
     }
 

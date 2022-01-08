@@ -50,16 +50,16 @@ mod integration_test {
 
         rsx!(cx, div {
             button {
+                onclick: move |_| {},
                 "Start"
-                onclick: move |_| {}
             }
             button {
+                onclick: move |_| {},
                 "Stop"
-                onclick: move |_| {}
             }
             button {
+                onclick: move |_| {},
                 "Reverse"
-                onclick: move |_| {}
             }
         })
     }
