@@ -1,4 +1,4 @@
-# Fermi: A global state management solution for Dioxus, inspired by Recoil.Js
+# Fermi: A global state management solution for Dioxus, inspired by [Recoil.Js](http://recoiljs.org)
 
 
 Fermi provides primitives for managing global state in Dioxus applications. Heavily inspired by Recoil.Js, Fermi uses the concepts of `atoms` and `selectors` to easily refactor local state into global state.
