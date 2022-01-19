@@ -27,7 +27,9 @@ pub fn use_read<'a, V: 'static>(cx: &'a ScopeState, f: impl Readable<V>) -> &'a 
 
     let id = f.unique_id();
     let inner = cx.use_hook(|_| {
-        let root = cx.consume_context::<RefCell<AtomRoot>>().unwrap();
+        let root = cx.consume_context::<RefCell<AtomRoot>>().expect(
+            "AtomRoot not initiated. `use_init_atom_root` is necessary before using an Atom.",
+        );
         let scope_id = cx.scope_id();
         UseReadInner {
             value: None,

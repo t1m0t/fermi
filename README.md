@@ -9,7 +9,9 @@ Fermi provides primitives for managing global state in Dioxus applications. Heav
 static Name: Atom<String> = |_| "Dioxus".to_string();
 
 fn app(cx: Scope) -> Element {      
-    // then we read it
+    //init the AtomRoot
+    let _ = use_init_atom_root(&cx);
+    // then we can read it
     let name = use_read(&cx, Name);
 
     cx.render(rsx!{
