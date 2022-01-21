@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap, rc::Rc};
+use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 
 use dioxus::core::ScopeId;
 use im_rc::HashSet;
@@ -8,7 +8,7 @@ use crate::Readable;
 pub type AtomId = *const ();
 
 pub struct AtomRoot {
-    pub atoms: HashMap<AtomId, Slot>,
+    pub atoms: RefCell<HashMap<AtomId, Slot>>,
     pub update_any: Rc<dyn Fn(ScopeId)>,
 }
 
@@ -21,14 +21,16 @@ impl AtomRoot {
     pub fn new(update_any: Rc<dyn Fn(ScopeId)>) -> Self {
         Self {
             update_any,
-            atoms: HashMap::new(),
+            atoms: RefCell::new(HashMap::new()),
         }
     }
 
-    pub fn register<V: 'static>(&mut self, f: impl Readable<V>, scope: ScopeId) -> Rc<V> {
+    pub fn register<V: 'static>(&self, f: impl Readable<V>, scope: ScopeId) -> Rc<V> {
         log::trace!("registering atom {:?}", f.unique_id());
 
-        if let Some(slot) = self.atoms.get_mut(&f.unique_id()) {
+        let mut atoms = self.atoms.borrow_mut();
+
+        if let Some(slot) = atoms.get_mut(&f.unique_id()) {
             slot.subscribers.insert(scope);
             slot.value.clone().downcast().unwrap()
         } else {
@@ -36,7 +38,7 @@ impl AtomRoot {
             let mut subscribers = HashSet::new();
             subscribers.insert(scope);
 
-            self.atoms.insert(
+            atoms.insert(
                 f.unique_id(),
                 Slot {
                     value: value.clone(),
@@ -47,8 +49,10 @@ impl AtomRoot {
         }
     }
 
-    pub fn set<V: 'static>(&mut self, ptr: AtomId, value: V) {
-        if let Some(slot) = self.atoms.get_mut(&ptr) {
+    pub fn set<V: 'static>(&self, ptr: AtomId, value: V) {
+        let mut atoms = self.atoms.borrow_mut();
+
+        if let Some(slot) = atoms.get_mut(&ptr) {
             slot.value = Rc::new(value);
             log::trace!("found item with subscribers {:?}", slot.subscribers);
 
@@ -61,8 +65,10 @@ impl AtomRoot {
         }
     }
 
-    pub fn unsubscribe(&mut self, ptr: AtomId, scope: ScopeId) {
-        if let Some(slot) = self.atoms.get_mut(&ptr) {
+    pub fn unsubscribe(&self, ptr: AtomId, scope: ScopeId) {
+        let mut atoms = self.atoms.borrow_mut();
+
+        if let Some(slot) = atoms.get_mut(&ptr) {
             slot.subscribers.remove(&scope);
         }
     }
